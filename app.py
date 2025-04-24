@@ -1,164 +1,129 @@
 import streamlit as st
 import pandas as pd
+import re
+from hashlib import md5
 from classifier import classify_email
 
-# Dummy email dataset
+# ----------------------- Dummy US‑centric email set ----------------------- #
 dummy_emails = [
-    {"subject": "Interview with Google", "snippet": "Your technical round is scheduled for Friday.", "from": "recruiter@google.com"},
-    {"subject": "50% Off Flipkart Deals", "snippet": "Big Billion Days are here!", "from": "promo@flipkart.com"},
-    {"subject": "Your HDFC Credit Card Statement", "snippet": "Your statement for this month is ready.", "from": "alerts@hdfc.com"},
-    {"subject": "Offer from Amazon", "snippet": "Save up to 60% today only!", "from": "promo@amazon.com"},
-    {"subject": "LinkedIn Job Alert", "snippet": "5 new jobs match your profile.", "from": "jobs@linkedin.com"},
-    {"subject": "Resume Shortlisted", "snippet": "You've been shortlisted for next steps.", "from": "hr@startup.com"},
-    {"subject": "New Login to Your Account", "snippet": "We noticed a new login.", "from": "security@xyz.com"},
+    {"subject": "Interview with Google", "snippet": "Your technical interview is scheduled for Friday.", "from": "recruiter@google.com"},
+    {"subject": "Walmart Flash Sale – 50% OFF", "snippet": "Biggest deals of the season, today only!", "from": "promo@walmart.com"},
+    {"subject": "Your Chase Credit Card Statement", "snippet": "Your monthly statement is ready to view.", "from": "alerts@chase.com"},
+    {"subject": "Apple Invoice", "snippet": "Thank you for your purchase on the App Store.", "from": "no‑reply@apple.com"},
+    {"subject": "LinkedIn Job Alert", "snippet": "5 new software jobs match your profile.", "from": "jobs-noreply@linkedin.com"},
+    {"subject": "Congratulations – You’re Shortlisted!", "snippet": "Please complete the next steps to continue.", "from": "careers@startup.io"},
+    {"subject": "New Login Alert", "snippet": "We noticed a new login from Chrome on Mac.", "from": "security@outlook.com"},
     {"subject": "Netflix Subscription Renewal", "snippet": "Your monthly plan has been renewed.", "from": "billing@netflix.com"},
-    {"subject": "Exclusive Invite to Webinar", "snippet": "Join us this weekend.", "from": "events@saascompany.com"},
-    {"subject": "Apple Invoice", "snippet": "Your receipt for Apple Music.", "from": "billing@apple.com"},
-    {"subject": "Team Standup Notes", "snippet": "Here are today's highlights.", "from": "teammate@company.com"},
-    {"subject": "Free Udemy Course!", "snippet": "Claim your 100% free learning access.", "from": "deals@udemy.com"},
-    {"subject": "Congratulations! You’re shortlisted", "snippet": "Schedule your interview now.", "from": "careers@unicorn.com"},
-    {"subject": "Amazon Delivered", "snippet": "Your package was delivered.", "from": "tracking@amazon.com"},
-    {"subject": "Paytm Cashback Received", "snippet": "₹50 added to your wallet.", "from": "rewards@paytm.com"},
-    {"subject": "Reminder: Doctor's Appointment", "snippet": "This is your confirmation.", "from": "noreply@clinic.com"},
-    {"subject": "Offer Letter", "snippet": "We’re excited to welcome you.", "from": "hr@company.com"},
-    {"subject": "Google Calendar Invite", "snippet": "You’ve been invited.", "from": "noreply@calendar.google.com"},
-    {"subject": "Spotify Premium Update", "snippet": "New playlist just dropped!", "from": "music@spotify.com"},
-    {"subject": "Important Account Alert", "snippet": "Action needed now.", "from": "support@bank.com"},
+    {"subject": "Amazon Delivery Update", "snippet": "Your package has been delivered.", "from": "tracking@amazon.com"},
+    {"subject": "Offer Letter – Welcome Aboard", "snippet": "We’re excited to send you the official offer letter.", "from": "hr@bigcorp.com"},
 ]
 
-st.set_page_config(page_title="📬 AI Email Prioritizer", page_icon="📬", layout="wide")
+# ----------------------- Streamlit page config --------------------------- #
+st.set_page_config(page_title="📬 AI Email Prioritizer", page_icon="📬", layout="wide")
 
-st.markdown("""
-    <style>
-    .urgent {color: red; font-weight: bold;}
-    .read-later {color: orange; font-weight: bold;}
-    .promo {color: grey; font-style: italic;}
-    .email-box {
-        border: 1px solid #ddd;
-        border-radius: 12px;
-        padding: 18px;
-        margin: 12px 0;
-        box-shadow: 3px 3px 10px rgba(0,0,0,0.07);
-        background-color: #fefefe;
-    }
-    .info-box {
-        background-color: #f0f9ff;
-        border-left: 6px solid #2196F3;
-        padding: 16px;
-        margin-bottom: 16px;
-        border-radius: 8px;
-    }
-    </style>
-""", unsafe_allow_html=True)
+# ----------------------- Utility functions ------------------------------- #
 
-st.title("📬 AI Email Prioritizer")
+def highlight(text: str) -> str:
+    """Highlight key hiring / promo words."""
+    keywords = [
+        "interview", "shortlisted", "offer", "invoice", "statement",
+        "delivered", "renewal", "alert", "sale", "deal"
+    ]
+    def repl(match):
+        return f"<span style='background-color:#fff59d'>{match.group(0)}</span>"
+    for kw in keywords:
+        text = re.sub(kw, repl, text, flags=re.IGNORECASE)
+    return text
 
+# Unique id for each email to track in session
+
+def email_id(email):
+    raw = f"{email['subject']}|{email['snippet']}|{email['from']}"
+    return md5(raw.encode()).hexdigest()
+
+# ----------------------- Sidebar description ----------------------------- #
 with st.sidebar:
     st.markdown("""
-    ### 🔐 How This Works
-    To protect privacy and simplify sharing, this demo uses **dummy emails**.
+    ### 🔐 Privacy‑First Demo
+    This demo uses **dummy emails** so you can explore every feature safely.
 
-    ✅ Try full features without logging in
-    🔄 Click **Reclassify** to teach the AI — this helps improve future predictions and trains the model
-    📤 Export results with one click
+    * Click **Filter** buttons to bucket emails.
+    * Use **Reclassify** to teach the AI – your feedback is stored in‑memory.
+    * Export the current view to CSV any time.
 
-    👉 Want to use **your Gmail**?
-    You can click the button below to test it on your own inbox (developer-only feature).
+    _(Gmail connection for verified users only – no credentials are stored.)_
     """)
-    st.button("🔗 Connect Gmail (for verified users)")
 
-filter_category = st.radio(
-    "📂 Filter Emails by Category:",
-    ("All", "Urgent", "Read Later", "Promo"),
-    horizontal=True
-)
+# ----------------------- Title & Export button --------------------------- #
+st.title("📬 AI Email Prioritizer")
 
-user_reclassifications = []
-all_data = []
+# Placeholder for export button – created after dataframe is ready
+export_slot = st.empty()
 
-with st.spinner("Classifying emails..."):
-    for idx, email in enumerate(dummy_emails):
-        subject = email.get("subject", "(No Subject)")
-        snippet = email.get("snippet", "")
-        sender = email.get("from", "Unknown")
-        category = classify_email(subject, snippet, sender)
+# ----------------------- Category filter buttons ------------------------- #
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    chosen_filter = st.radio("Filter", ["All", "Urgent", "Read Later", "Promo"], index=0, key="filter", horizontal=True)
 
-        tag_class = {
-            "Urgent": "urgent",
-            "Ignore": "promo",
-            "Read Later": "read-later"
-        }.get(category, "")
+# ----------------------- Session state for re‑labels --------------------- #
+if "labels" not in st.session_state:
+    st.session_state.labels = {}
 
-        tag_text = {
-            "Urgent": "🔴 Urgent",
-            "Ignore": "🚫 Promo",
-            "Read Later": "🟡 Read Later"
-        }.get(category, category)
+# ----------------------- Classification loop ---------------------------- #
+view_records = []
+for idx, email in enumerate(dummy_emails):
+    key = email_id(email)
 
-        all_data.append({
-            "Subject": subject,
-            "Snippet": snippet,
-            "From": sender,
-            "Category": category
-        })
+    # Determine category (AI or user‑updated)
+    category = st.session_state.labels.get(key)
+    if category is None:
+        category = classify_email(email["subject"], email["snippet"], email["from"])
+        st.session_state.labels[key] = category  # cache initial label
 
-    filtered_emails = [e for e, d in zip(dummy_emails, all_data)
-                       if filter_category == "All" or d["Category"] == filter_category]
+    # Filter logic
+    if chosen_filter != "All" and category != chosen_filter:
+        continue
 
-    for idx, email in enumerate(filtered_emails):
-        subject = email.get("subject", "(No Subject)")
-        snippet = email.get("snippet", "")
-        sender = email.get("from", "Unknown")
-        category = classify_email(subject, snippet, sender)
+    # Build UI card
+    tag_style = {
+        "Urgent": ("urgent", "🔴 Urgent"),
+        "Promo": ("promo", "🚫 Promo"),
+        "Read Later": ("read-later", "🟡 Read Later"),
+    }
+    css_class, tag_text = tag_style.get(category, ("", category))
 
-        tag_class = {
-            "Urgent": "urgent",
-            "Promo": "promo",
-            "Read Later": "read-later"
-        }.get(category, "")
+    st.markdown(f"""
+        <div class='email-box'>
+            <p><strong>Subject:</strong> {highlight(email['subject'])}</p>
+            <p><strong>Snippet:</strong> {highlight(email['snippet'])}</p>
+            <p><strong>From:</strong> {email['from']}</p>
+            <p class='{css_class}'><strong>Category:</strong> {tag_text}</p>
+        </div>
+    """, unsafe_allow_html=True)
 
-        tag_text = {
-            "Urgent": "🔴 Urgent",
-            "Promo": "🚫 Promo",
-            "Read Later": "🟡 Read Later"
-        }.get(category, category)
+    if st.button("✏️ Reclassify", key=f"reclass_{key}"):
+        new_cat = st.selectbox("Select new category", ["Urgent", "Read Later", "Promo"], key=f"select_{key}")
+        if new_cat != category:
+            st.session_state.labels[key] = new_cat
+            st.experimental_rerun()
 
-        with st.container():
-            st.markdown(f"""
-                <div class='email-box'>
-                    <p><strong>Subject:</strong> {subject}</p>
-                    <p><strong>Snippet:</strong> {snippet}</p>
-                    <p><strong>From:</strong> {sender}</p>
-                    <p class='{tag_class}'><strong>Category:</strong> {tag_text}</p>
-                </div>
-            """, unsafe_allow_html=True)
+    # Collect record for export
+    view_records.append({
+        "Subject": email["subject"],
+        "Snippet": email["snippet"],
+        "From": email["from"],
+        "Category": st.session_state.labels[key]
+    })
 
-            if st.button(f"✏️ Reclassify Email #{idx+1}", key=f"reclass_button_{idx}"):
-                new_category = st.radio(
-                    "Choose new category:",
-                    ["Urgent", "Read Later", "Promo"],
-                    key=f"reclass_radio_{idx}"
-                )
-                if new_category != category:
-                    user_reclassifications.append({
-                        "subject": subject,
-                        "snippet": snippet,
-                        "from": sender,
-                        "original": category,
-                        "reclassified": new_category
-                    })
-
-if user_reclassifications:
-    st.markdown("### ✍️ User Reclassifications")
-    for change in user_reclassifications:
-        st.write(f"➡️ **{change['subject']}** changed from *{change['original']}* to *{change['reclassified']}*")
-
-if all_data:
-    df = pd.DataFrame(all_data)
-    csv = df.to_csv(index=False).encode("utf-8")
-    st.download_button(
-        label="📤 Export All Emails to CSV",
-        data=csv,
-        file_name="classified_emails.csv",
+# ----------------------- Export current view ----------------------------- #
+if view_records:
+    df_view = pd.DataFrame(view_records)
+    csv_bytes = df_view.to_csv(index=False).encode("utf-8")
+    export_slot.download_button(
+        label="📤 Export Displayed Emails as CSV",
+        data=csv_bytes,
+        file_name="emails_view.csv",
         mime="text/csv"
     )
+else:
+    st.info("No emails to display for this filter.")
