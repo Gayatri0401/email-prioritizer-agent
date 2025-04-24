@@ -49,7 +49,7 @@ st.title("📬 AI Email Prioritizer")
 with st.sidebar:
     st.markdown("""
     ### 🔐 How This Works
-    To protect privacy and simplify sharing, this demo uses 20 **dummy emails**.
+    To protect privacy and simplify sharing, this demo uses **dummy emails**.
 
     You can still try the full experience:
     - See how the model classifies emails
@@ -57,7 +57,7 @@ with st.sidebar:
     - Export to CSV
 
     👉 Want to use **your Gmail** instead?
-    Click the button below to authorize and classify your actual inbox (developer-only feature).
+    Click the button below to authorize and classify your actual inbox (for verified users).
     """)
     st.button("🔗 Connect Gmail (for verified users)")
 
