@@ -1,6 +1,8 @@
+import os
+os.environ["TRANSFORMERS_NO_TORCHVISION"] = "1"   # <-- add this
+from transformers import pipeline
 import re
 from transformers import pipeline
-
 classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
 
 def classify_email(subject, snippet, sender=None):
