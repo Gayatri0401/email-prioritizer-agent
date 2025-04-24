@@ -1,6 +1,17 @@
+# --- Core App ---
 streamlit==1.30.0
-pandas
-numpy
-scikit-learn
-transformers
-torch
+
+# --- NLP stack ---
+transformers==4.38.2          # zero-shot pipeline
+torch==2.1.2+cpu              # CPU wheel that works on Py-3.9/3.10/3.11
+sentencepiece==0.1.99         # tokenizer dependency for BART-MNLI
+scikit-learn==1.4.1
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+# --- Data & utils ---
+pandas==2.2.1
+numpy==1.26.4
+
+# --- Optional (pulled in by transformers but pinned here for stability) ---
+tokenizers==0.15.2
+huggingface-hub==0.21.4
