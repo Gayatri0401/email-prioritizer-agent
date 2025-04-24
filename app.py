@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from classifier import classify_email
 
-# Dummy email dataset (replaceable with real or uploaded ones)
+# Dummy email dataset
 dummy_emails = [
     {"subject": "Interview with Google", "snippet": "Your technical round is scheduled for Friday.", "from": "recruiter@google.com"},
     {"subject": "50% Off Flipkart Deals", "snippet": "Big Billion Days are here!", "from": "promo@flipkart.com"},
@@ -35,11 +35,18 @@ st.markdown("""
     .promo {color: grey; font-style: italic;}
     .email-box {
         border: 1px solid #ddd;
-        border-radius: 10px;
-        padding: 15px;
-        margin: 10px 0;
-        box-shadow: 2px 2px 6px rgba(0,0,0,0.1);
-        background-color: #fdfdfd;
+        border-radius: 12px;
+        padding: 18px;
+        margin: 12px 0;
+        box-shadow: 3px 3px 10px rgba(0,0,0,0.07);
+        background-color: #fefefe;
+    }
+    .info-box {
+        background-color: #f0f9ff;
+        border-left: 6px solid #2196F3;
+        padding: 16px;
+        margin-bottom: 16px;
+        border-radius: 8px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -51,18 +58,17 @@ with st.sidebar:
     ### 🔐 How This Works
     To protect privacy and simplify sharing, this demo uses **dummy emails**.
 
-    You can still try the full experience:
-    - See how the model classifies emails
-    - Reclassify if needed
-    - Export to CSV
+    ✅ Try full features without logging in
+    🔄 Click **Reclassify** to teach the AI — this helps improve future predictions and trains the model
+    📤 Export results with one click
 
-    👉 Want to use **your Gmail** instead?
-    Click the button below to authorize and classify your actual inbox (for verified users).
+    👉 Want to use **your Gmail**?
+    You can click the button below to test it on your own inbox (developer-only feature).
     """)
     st.button("🔗 Connect Gmail (for verified users)")
 
 filter_category = st.radio(
-    "🔎 Filter Emails by Category:",
+    "📂 Filter Emails by Category:",
     ("All", "Urgent", "Read Later", "Promo"),
     horizontal=True
 )
@@ -70,15 +76,40 @@ filter_category = st.radio(
 user_reclassifications = []
 all_data = []
 
-with st.spinner("Classifying dummy emails..."):
+with st.spinner("Classifying emails..."):
     for idx, email in enumerate(dummy_emails):
         subject = email.get("subject", "(No Subject)")
         snippet = email.get("snippet", "")
         sender = email.get("from", "Unknown")
         category = classify_email(subject, snippet, sender)
 
-        if filter_category != "All" and category != filter_category:
-            continue
+        tag_class = {
+            "Urgent": "urgent",
+            "Promo": "promo",
+            "Read Later": "read-later"
+        }.get(category, "")
+
+        tag_text = {
+            "Urgent": "🔴 Urgent",
+            "Promo": "🚫 Promo",
+            "Read Later": "🟡 Read Later"
+        }.get(category, category)
+
+        all_data.append({
+            "Subject": subject,
+            "Snippet": snippet,
+            "From": sender,
+            "Category": category
+        })
+
+    filtered_emails = [e for e, d in zip(dummy_emails, all_data)
+                       if filter_category == "All" or d["Category"] == filter_category]
+
+    for idx, email in enumerate(filtered_emails):
+        subject = email.get("subject", "(No Subject)")
+        snippet = email.get("snippet", "")
+        sender = email.get("from", "Unknown")
+        category = classify_email(subject, snippet, sender)
 
         tag_class = {
             "Urgent": "urgent",
@@ -116,13 +147,6 @@ with st.spinner("Classifying dummy emails..."):
                         "original": category,
                         "reclassified": new_category
                     })
-
-        all_data.append({
-            "Subject": subject,
-            "Snippet": snippet,
-            "From": sender,
-            "Category": category
-        })
 
 if user_reclassifications:
     st.markdown("### ✍️ User Reclassifications")
