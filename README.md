@@ -1,40 +1,22 @@
 # ✉️ AI Email Prioritizer Agent
 
-This is a smart email assistant that connects to Gmail and classifies emails as **Urgent 🔴**, **Read Later 🟡**, or **Promo 🚫** — built specifically for job seekers and recruiters.
+A smart inbox that auto-buckets mail into **Urgent**, **Read Later**, or **Ignore** and lets you correct the AI in real-time.
 
-## 🚀 Features
+## 🚀 Demo
+[Live on Streamlit Cloud](https://YOUR-DEPLOYED-URL)
 
-- ✅ Connects securely to your Gmail
-- ✅ Classifies emails using smart rules + machine learning
-- ✅ Highlights interviews, application steps, technical rounds
-- ✅ Filters out promo and newsletter noise
-- ✅ Works 100% locally for free using open-source models
+## Features
+| ✅ | Description |
+|----|-------------|
+| Auto-classify inbox | Zero-shot model (BART-MNLI) running on CPU |
+| Real-time feedback  | “Reclassify” instantly updates the view & stores the label |
+| CSV export          | Download whichever bucket you’re looking at |
+| Privacy-first demo  | Ships with dummy US-centric emails; Gmail OAuth stubbed until verified |
 
-## 📦 Tech Used
-
-- Python 3
-- Gmail API (OAuth)
-- Hugging Face Transformers
-- PyTorch + Numpy
-- Rule-based filtering + zero-shot classification
-
-## 🧪 Example Output
-
-📨 Subject: Interview at Google ✉️ Snippet: Your technical round is scheduled for Thursday... 🔖 Category: Urgent 🔴
-
-📨 Subject: 50% off Flipkart Deals! ✉️ Snippet: Exclusive offer ends soon... 🔖 Category: Promo 🚫
-
-📨 Subject: HDFC Credit Card Statement ✉️ Snippet: Your monthly bill is now available... 🔖 Category: Read Later 🟡
-
-
-## 🛠️ Installation
-
+## Quick Start (local)
 ```bash
-git clone https://github.com/Gayatri0401/email-prioritizer-agent
+git clone https://github.com/YOUR-USER/email-prioritizer-agent
 cd email-prioritizer-agent
-python3 -m venv env
-source env/bin/activate
+python -m venv env && source env/bin/activate
 pip install -r requirements.txt
-
----
-Created by [@Gayatri0401](https://github.com/Gayatri0401) 🚀
+streamlit run app.py
