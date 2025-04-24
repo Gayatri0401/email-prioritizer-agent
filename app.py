@@ -85,13 +85,13 @@ with st.spinner("Classifying emails..."):
 
         tag_class = {
             "Urgent": "urgent",
-            "Promo": "promo",
+            "Ignore": "promo",
             "Read Later": "read-later"
         }.get(category, "")
 
         tag_text = {
             "Urgent": "🔴 Urgent",
-            "Promo": "🚫 Promo",
+            "Ignore": "🚫 Promo",
             "Read Later": "🟡 Read Later"
         }.get(category, category)
 
